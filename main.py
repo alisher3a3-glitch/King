@@ -2,6 +2,9 @@
 import os
 import html
 import asyncio
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
@@ -17,6 +20,23 @@ CHANNEL_ID = os.getenv("CHANNEL_ID")
 CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
 CARD_NUMBER = os.getenv("CARD_NUMBER")
+
+# Render tekin Web Service uchun port ochish hiyasi
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is alive!")
+    def log_message(self, format, *args):
+        return
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    print(f"Dummy server started on port {port}")
+    server.serve_forever()
+
+threading.Thread(target=run_dummy_server, daemon=True).start()
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -143,6 +163,7 @@ async def finish_photos(message: types.Message, state: FSMContext):
         del user_photos[uid]
 
 async def main():
+    print("Bot polling started...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
